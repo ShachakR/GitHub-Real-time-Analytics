@@ -3,7 +3,6 @@ window.onload = function () {
     loadData();
     startCountdown();
     // Call the function every 60 seconds (60000 milliseconds)
-    setInterval(loadData, 60000);
 }
 
 function loadData() {
@@ -40,6 +39,7 @@ function loadData() {
         if (timeLeft <= 0) {
             clearInterval(countdownTimer);
             timeLeft = 60;
+            loadData();
             setTimeout(startCountdown, 1000);
         }
     }, 1000);

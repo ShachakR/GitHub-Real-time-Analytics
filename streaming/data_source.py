@@ -35,7 +35,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         }
                         json_data = f"{json.dumps(data)}\n".encode()
                         conn.send(json_data)
-                        print(f"Data sent_:{json_data}")
+                        print(f"Data sent:{json_data}")
                 else:
                     print("Error:", response.status_code, response.reason)
                 time.sleep(15)
