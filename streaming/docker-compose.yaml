@@ -45,6 +45,6 @@ services:
       - ../streaming:/streaming
     ports:
       - '5000:5000'
-    command: /webapp/run-flask.sh
+    command: /streaming/webapp/run-flask.sh
   redis:
     image: redis

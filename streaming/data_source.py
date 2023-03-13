@@ -33,9 +33,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                             'stargazers_count': repository["stargazers_count"],
                             'pushed_at': repository["pushed_at"]
                         }
-                        json_data = json.dumps(data).encode()
+                        json_data = f"{json.dumps(data)}\n".encode()
                         conn.send(json_data)
-                        print("Data sent:", data)
+                        print(f"Data sent_:{json_data}")
                 else:
                     print("Error:", response.status_code, response.reason)
                 time.sleep(15)
