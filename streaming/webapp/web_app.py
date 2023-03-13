@@ -12,7 +12,7 @@ def updateData():
     r.set('data', json.dumps(data))
     return jsonify({'msg': 'success'})
 
-@app.route('/getData')
+@app.route('/getData', methods=['GET'])
 def getData():
     r = Redis(host='redis', port=6379)
     data = r.get('data')
