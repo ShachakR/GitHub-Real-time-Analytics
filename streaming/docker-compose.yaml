@@ -39,12 +39,12 @@ services:
     volumes:
       - ../streaming:/streaming
     command: python3.9 -u /streaming/data_source.py
-  # webapp:
-  #   image: eecs4415/python
-  #   volumes:
-  #     - ./streaming:/streaming
-  #   ports:
-  #     - '5000:5000'
-  #   command: 
+  webapp:
+    image: eecs4415/python
+    volumes:
+      - ../streaming:/streaming
+    ports:
+      - '5000:5000'
+    command: /webapp/run-flask.sh
   redis:
     image: redis
