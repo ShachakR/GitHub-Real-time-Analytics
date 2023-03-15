@@ -5,6 +5,14 @@ window.onload = function () {
     // Call the function every 60 seconds (60000 milliseconds)
 }
 
+function fetchUpdatedImage(src) {
+    var img = new Image();
+    img.onload = function() {
+      document.getElementById('req2-plot').src = img.src;
+    };
+    img.src = src;
+  }
+
 function loadData() {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '/getData', true);
@@ -26,6 +34,7 @@ function loadData() {
                 document.getElementById(id).innerHTML = `${data['language']}: ${data['count']}`
             }
 
+            fetchUpdatedImage(responseData['req2']);
 
         }
     };

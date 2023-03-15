@@ -5,6 +5,30 @@ import json
 
 app = Flask(__name__)
 
+def createReq2Plot(data):
+    counts_by_language = {}
+    batch_times = []
+    for d in data:
+        batch_time = d['batch_time']
+        batch_counts = json.loads(d['batch_counts'])
+        batch_times.append(batch_time)
+        for count in batch_counts:
+            language = count['language']
+            if language not in counts_by_language:
+                counts_by_language[language] = []
+            counts_by_language[language].append(count['count'])
+    
+    for language, counts in counts_by_language.items():
+        plt.plot(batch_times, counts, label=language)
+    plt.xlabel('Batch Time')
+    plt.ylabel('Count')
+    plt.title('Counts by Language for each Batch Interval')
+    plt.legend()
+    plt.savefig('/streaming/webapp/static/chart_req2.png')
+
+    return '/static/chart_req2.png'
+
+
 @app.route('/updateData', methods=['POST'])
 def updateData():
     data = request.get_json()
@@ -22,7 +46,13 @@ def getData():
     except TypeError:
         return jsonify({'msg': 'no data'})
     
-    return jsonify(data)
+    
+    result = {
+        'req1': data['req1'],
+        'req2': createReq2Plot(data['req2'])
+    }
+
+    return jsonify(result)
 
 @app.route('/', methods=['GET'])
 def index():
