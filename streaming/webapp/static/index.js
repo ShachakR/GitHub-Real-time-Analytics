@@ -12,6 +12,7 @@ function loadData() {
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
             var responseData = JSON.parse(xhr.responseText);
+            console.log(responseData)
 
             if(xhr.responseText["msg"] == "no data"){
                 return;
