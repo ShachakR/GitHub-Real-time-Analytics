@@ -1,8 +1,10 @@
-var timeLeft = 60; // Set initial time
+var UPDATE_INTERVAL = 60
+
+var timeLeft = UPDATE_INTERVAL; // Set initial time
+
 window.onload = function () {
     loadData();
-    startCountdown();
-    // Call the function every 60 seconds (60000 milliseconds)
+    startUpdateCycle();
 }
 
 function fetchUpdatedImage(src) {
@@ -38,14 +40,13 @@ function loadData() {
     xhr.send();
 }
 
- // Function to start the countdown timer
- function startCountdown() {
+ function startUpdateCycle() {
     countdownTimer = setInterval(function() {
         timeLeft--;
         document.getElementById("countdown").innerHTML = "Updating Data in: " + timeLeft + " seconds";
         if (timeLeft <= 0) {
             clearInterval(countdownTimer);
-            timeLeft = 60;
+            timeLeft = UPDATE_INTERVAL;
             loadData();
             setTimeout(startCountdown, 1000);
         }
