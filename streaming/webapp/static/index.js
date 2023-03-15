@@ -31,7 +31,7 @@ function loadData() {
                 document.getElementById(id).innerHTML = `${data['language']}: ${data['count']}`
             }
 
-            fetchUpdatedImage(responseData['req2']);
+            fetchUpdatedImage(responseData['req2'] + "?t=" + new Date().getTime());
 
         }
     };
