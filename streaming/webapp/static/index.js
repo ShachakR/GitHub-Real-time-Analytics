@@ -6,11 +6,8 @@ window.onload = function () {
 }
 
 function fetchUpdatedImage(src) {
-    var img = new Image();
-    img.onload = function() {
-      document.getElementById('req2-plot').src = img.src;
-    };
-    img.src = src;
+    var img = document.getElementById("req2-plot");
+    img.setAttribute("src", src);
   }
 
 function loadData() {

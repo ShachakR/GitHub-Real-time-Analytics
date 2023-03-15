@@ -6,11 +6,12 @@ import json
 app = Flask(__name__)
 
 def createReq2Plot(data):
+    plt.cla()
     counts_by_language = {}
     batch_times = []
-    for d in data:
-        batch_time = d['batch_time']
-        batch_counts = json.loads(json.dumps(d['batch_counts']))
+    for batch in data:
+        batch_time = batch['batch_time']
+        batch_counts = json.loads(json.dumps(batch['batch_counts']))
         batch_times.append(batch_time)
         
         for count in batch_counts:
