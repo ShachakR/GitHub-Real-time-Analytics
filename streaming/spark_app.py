@@ -9,6 +9,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 
 BATCH_INTERVAL = 15
+LANGUAGES = ["JavaScript", "Python", "Java"]
 
 # Where each key is a repo id and value is their json data
 def getAllRepositories() -> dict:
@@ -71,18 +72,28 @@ def count_batched_repos_last_60():
             time = datetime.utcnow()
             delta = time - pushed_at
             # check if the time difference is less than 60 seconds
-            if delta.total_seconds() <= 60:
+            if delta.total_seconds() <= 600000:
                 if(repo['id'] not in repos_last_60):
                     repos_last_60[repo['id']] = repo
         
         repos = sc.parallelize(repos_last_60.values())
         counts  = repos.map(lambda repo: (repo['language'], 1)).reduceByKey(lambda a, b: a+b)
-        counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]})
-        counts_json_data = json.dumps(counts_list.collect())
+        counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]}).collect()
 
+        verify_dict = {count["language"]: count["count"] for count in counts_list}
+
+        # fill in missing data if needed
+        # Iterate over the required languages list and add missing languages to the dictionary
+        for language in LANGUAGES:
+            if language not in verify_dict:
+                verify_dict[language] = 0
+        
+        # Convert the dictionary back to a list of JSON objects
+        verified_counts_json_data = [{"language": language, "count": verify_dict[language]} for language in verify_dict]
+        
         data.append({
             'batch_time': batch['time'],
-            'batch_counts': counts_json_data
+            'batch_counts': verified_counts_json_data
             })
 
     return data

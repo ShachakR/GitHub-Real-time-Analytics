@@ -10,8 +10,9 @@ def createReq2Plot(data):
     batch_times = []
     for d in data:
         batch_time = d['batch_time']
-        batch_counts = json.loads(d['batch_counts'])
+        batch_counts = json.loads(json.dumps(d['batch_counts']))
         batch_times.append(batch_time)
+        
         for count in batch_counts:
             language = count['language']
             if language not in counts_by_language:
@@ -20,6 +21,7 @@ def createReq2Plot(data):
     
     for language, counts in counts_by_language.items():
         plt.plot(batch_times, counts, label=language)
+
     plt.xlabel('Batch Time')
     plt.ylabel('Count')
     plt.title('Counts by Language for each Batch Interval')
