@@ -25,7 +25,13 @@ def getBatchRepositories() -> list:
     return globals()['batch_repositories']
 
 def updateBatchRepositories(repositories):
-    getBatchRepositories().append(repositories)
+    time = datetime.utcnow()
+    batch_time = time.strftime('%H:%M:%S')
+
+    getBatchRepositories().append({
+        'time': batch_time,
+        'repos': repositories
+    })
 
 def getUpTime():
     if('upTime' not in globals()):
@@ -60,7 +66,7 @@ def count_batched_repos_last_60():
     
     for batch in batched_repositories:
         repos_last_60 = {}
-        for repo in batch.values():
+        for repo in batch['repos'].values():
             pushed_at = datetime.strptime(repo['pushed_at'], '%Y-%m-%dT%H:%M:%SZ')
             time = datetime.utcnow()
             delta = time - pushed_at
@@ -74,9 +80,8 @@ def count_batched_repos_last_60():
         counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]})
         counts_json_data = json.dumps(counts_list.collect())
 
-        time_str = time.strftime('%H:%M:%S')
         data.append({
-            'batch_time': time_str,
+            'batch_time': batch['time'],
             'batch_counts': counts_json_data
             })
 
