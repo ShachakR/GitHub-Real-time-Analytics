@@ -7,8 +7,8 @@ window.onload = function () {
     startUpdateCycle();
 }
 
-function fetchUpdatedImage(src) {
-    var img = document.getElementById("req2-plot");
+function fetchUpdatedImage(src, id) {
+    var img = document.getElementById(id);
     img.setAttribute("src", src);
   }
 
@@ -25,7 +25,7 @@ function loadData() {
                 return;
             }
 
-            let req1 = JSON.parse(responseData['req1']);
+            let req1 = responseData['req1'];
             // Loop through the JSON list for requirement 1
             for (var i = 0; i < req1.length; i++) {
                 let data = req1[i];
@@ -33,7 +33,8 @@ function loadData() {
                 document.getElementById(id).innerHTML = `${data['language']}: ${data['count']}`
             }
 
-            fetchUpdatedImage(responseData['req2'] + "?t=" + new Date().getTime());
+            fetchUpdatedImage(responseData['req2'] + "?t=" + new Date().getTime(), "req2-plot");
+            fetchUpdatedImage(responseData['req3'] + "?t=" + new Date().getTime(), "req3-plot");
 
         }
     };

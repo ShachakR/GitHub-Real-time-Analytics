@@ -7,30 +7,52 @@ app = Flask(__name__)
 
 def createReq2Plot(data):
     plt.cla()
-    counts_by_language = {}
+    
     batch_times = []
-    for batch in data:
-        batch_time = batch['batch_time']
-        batch_counts = json.loads(json.dumps(batch['batch_counts']))
-        batch_times.append(batch_time)
-        
-        for count in batch_counts:
-            language = count['language']
-            if language not in counts_by_language:
-                counts_by_language[language] = []
-            counts_by_language[language].append(count['count'])
+    counts_by_language = {}
+
+    for repo in data:
+        batch_time = repo['batch_time']
+        language = repo['language']
+        count = repo['count']
+
+        if batch_time not in batch_times:
+            batch_times.append(batch_time)
+
+        if language not in counts_by_language:
+            counts_by_language[language] = []
+
+        counts_by_language[language].append(count)
     
     for language, counts in counts_by_language.items():
         plt.plot(batch_times, counts, label=language)
 
     plt.xlabel('Batch Time')
     plt.ylabel('Count')
-    plt.title('Counts by Language for each Batch Interval')
+    plt.title('Counts by language for each batch interval')
     plt.legend()
     plt.savefig('/streaming/webapp/static/chart_req2.png')
 
     return '/static/chart_req2.png'
 
+def createReq3Plot(data):
+    plt.cla()
+    languages = []
+    avg_stars = []
+
+    for d in data:
+        languages.append(d['language'])
+        avg_stars.append(d['avg_stargazers_count'])
+
+    plt.bar(languages, avg_stars)
+
+    # Add labels and title
+    plt.xlabel('Languages')
+    plt.ylabel('Average number of stars')
+    plt.title('Average number of stars by language')
+    plt.savefig('/streaming/webapp/static/bar_req3.png')
+
+    return '/static/bar_req3.png' 
 
 @app.route('/updateData', methods=['POST'])
 def updateData():
@@ -52,7 +74,8 @@ def getData():
     
     result = {
         'req1': data['req1'],
-        'req2': createReq2Plot(data['req2'])
+        'req2': createReq2Plot(data['req2']),
+        'req3': createReq3Plot(data['req3']),
     }
 
     return jsonify(result)

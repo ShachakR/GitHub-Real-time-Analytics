@@ -7,6 +7,7 @@ from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
+from pyspark.sql.functions import avg
 
 BATCH_INTERVAL = 15
 LANGUAGES = ["JavaScript", "Python", "Java"]
@@ -34,6 +35,9 @@ def updateBatchRepositories(repositories):
         'repos': repositories
     })
 
+def getSparkSession():
+    return globals()['spark_session']
+
 def getUpTime():
     if('upTime' not in globals()):
         globals()['upTime'] = 0
@@ -47,72 +51,113 @@ def send_to_client(data):
     url = 'http://webapp:5000/updateData'
     requests.post(url, json=data)
 
-def count_language_repos_total():
-    sc = globals()['SparkContext']
+def getTotalRepoCountByLanguage():
     repositories = getAllRepositories()
 
-    # creating RDDs from list 
-    repos = sc.parallelize(repositories.values())
-    counts  = repos.map(lambda repo: (repo['language'], 1)).reduceByKey(lambda a, b: a+b)
-    counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]})
-    counts_json_data = json.dumps(counts_list.collect())
-    return counts_json_data
+    # Convert the repositories dictionary to a list of dictionaries
+    repos_list = list(repositories.values())
 
-def count_batched_repos_last_60():
+    # get the SparkSession object
+    spark = getSparkSession()
+    
+    # Create a Spark DataFrame from the list of dictionaries
+    df = spark.createDataFrame(repos_list)
+
+    # Group the DataFrame by the 'language' column and count the number of occurrences of each language
+    counts_df = df.groupBy('language').count()
+
+    # Show the counts_df DataFrame in the console
+    print("----------- REQUIREMENT 3.1 -----------")
+    counts_df.show()
+
+    # Convert the resulting DataFrame to a list of dictionaries
+    counts_list = counts_df.rdd.map(lambda row: {'language': row['language'], 'count': row['count']}).collect()
+
+    return counts_list
+
+def getBatchedRepoLanguageCountsLast60Seconds():
     # get repos that were pushed during the last 60 secodns
     sc = globals()['SparkContext']
     batched_repositories = getBatchRepositories()
 
-    data = []
-    
+    batches_data = []
     for batch in batched_repositories:
-        repos_last_60 = {}
+        current_batch_repos = {}
+
+        # Get the repos that were pushed in the last 60 seconds
         for repo in batch['repos'].values():
+
+            # Calculate the time passed since repo was pushed, store it in delta
             pushed_at = datetime.strptime(repo['pushed_at'], '%Y-%m-%dT%H:%M:%SZ')
             time = datetime.utcnow()
             delta = time - pushed_at
-            # check if the time difference is less than 60 seconds
-            if delta.total_seconds() <= 600000:
-                if(repo['id'] not in repos_last_60):
-                    repos_last_60[repo['id']] = repo
-        
-        repos = sc.parallelize(repos_last_60.values())
+
+            # Check if the time difference is less than 60 seconds
+            if delta.total_seconds() <= 60:
+                if(repo['id'] not in current_batch_repos):
+                    current_batch_repos[repo['id']] = repo
+            
+        repos = sc.parallelize(current_batch_repos.values())
         counts  = repos.map(lambda repo: (repo['language'], 1)).reduceByKey(lambda a, b: a+b)
         counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]}).collect()
 
-        verify_dict = {count["language"]: count["count"] for count in counts_list}
+        current_batch_language_counts = {count["language"]: count["count"] for count in counts_list}
 
-        # fill in missing data if needed
+        # Fill in missing data if needed
         # Iterate over the required languages list and add missing languages to the dictionary
         for language in LANGUAGES:
-            if language not in verify_dict:
-                verify_dict[language] = 0
-        
-        # Convert the dictionary back to a list of JSON objects
-        verified_counts_json_data = [{"language": language, "count": verify_dict[language]} for language in verify_dict]
-        
-        data.append({
-            'batch_time': batch['time'],
-            'batch_counts': verified_counts_json_data
-            })
+            if language not in current_batch_language_counts:
+                current_batch_language_counts[language] = 0
 
-    return data
+        # Convert the dictionary back to a list of JSON objects and add them to batches_data list
+        for language in current_batch_language_counts:
+            batches_data.append({'batch_time': batch['time'], "language": language, "count": current_batch_language_counts[language]})
 
-def displayDataToConsole(data):
-    print("----------- REQUIREMENT 3.1 -----------")
-    print(data['req1'])
+    # get the SparkSession object
+    spark = getSparkSession()
+    
+    # Create a Spark DataFrame from the list of dictionaries
+    df = spark.createDataFrame(batches_data)
 
+    # Show the df DataFrame in the console
     print("----------- REQUIREMENT 3.2 -----------")
-    print(data['req2'])
+    df.show()
+
+    return batches_data
+
+def getAvgStargazersByLanguage():
+    repositories = getAllRepositories()
+
+    # Convert the repositories dictionary to a list of dictionaries
+    repos_list = list(repositories.values())
+
+    # Get the SparkSession object
+    spark = getSparkSession()
+
+    # Create a Spark DataFrame from the list of dictionaries
+    df = spark.createDataFrame(repos_list)
+
+    # Group the DataFrame by the 'language' column and calculate the average 'stargazers_count' and set the new column name to 'avg_stargazers_count'
+    avg_df = df.groupBy('language').agg(round(avg("stargazers_count"), 2).alias('avg_stargazers_count'))
+
+    # Show the avg_df DataFrame in the console
+    print("----------- REQUIREMENT 3.3 -----------")
+    avg_df.show()
+
+    # Convert the resulting DataFrame to a list of dictionaries
+    avg_list = avg_df.rdd.map(lambda row: {'language': row['language'], 'avg_stargazers_count': row['avg_stargazers_count']}).collect()
+
+    return avg_list
 
 def generate_data():
+
     data = {
-        'req1': count_language_repos_total(),
-        'req2': count_batched_repos_last_60()
+        'req1': getTotalRepoCountByLanguage(),
+        'req2': getBatchedRepoLanguageCountsLast60Seconds(),
+        'req3': getAvgStargazersByLanguage()
     }
 
     send_to_client(data)
-    displayDataToConsole(data)
 
 def process_rdd(time, rdd):
     pass
@@ -142,12 +187,18 @@ def process_rdd(time, rdd):
         print("An error occurred:", e)
         tb_str = traceback.format_tb(e.__traceback__)
         print(f"Error traceback:\n{tb_str}")
+        print('Waiting for Data...')
 
 if __name__ == "__main__":
     DATA_SOURCE_IP = "data-source"
     DATA_SOURCE_PORT = 9999
+
     sc = SparkContext(appName="EECS4415_Porject_3")
     globals()['SparkContext'] = sc
+
+    sparkSession = SparkSession.builder.appName("EECS4415_Porject_3") .getOrCreate()
+    globals()['spark_session'] = sparkSession
+
     print("Started Running....")
     sc.setLogLevel("ERROR")
     ssc = StreamingContext(sc, BATCH_INTERVAL)
