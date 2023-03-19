@@ -1,6 +1,6 @@
 import json
 import requests
-import sys
+from collections import Counter
 from datetime import datetime
 import traceback
 from pyspark import SparkContext
@@ -149,12 +149,53 @@ def getAvgStargazersByLanguage():
 
     return avg_list
 
+def getTopTenFrequentWordsByLanguage():
+    repositories = getAllRepositories()
+    sc = globals()['SparkContext']
+    # Convert the repositories dictionary to a RDDs
+    repos = sc.parallelize(repositories.values())
+
+    # Split the description into words and group them by language
+    # I use groupByKey to get elements where each element is a pair consisting of a language and an iterable of the words.
+    words_by_language = repos.flatMap(lambda repo: ((repo['language'], word) for word in str(repo['description']).lower().split())) \
+                             .groupByKey()
+    
+    # Count the frequency of each word
+    # We first transform each language's iterable of the words to a Counter object with those words.
+    # We then sort the resulting dictionary items by their values in descending order and takes the top 10 items.
+    # The result is elements where each element is a pair consisting of a language and the top ten most frequent words.
+    word_count_by_language = words_by_language.mapValues(lambda words: Counter(words)) \
+                                               .mapValues(lambda word_count: sorted(word_count.items(), key=lambda x: x[1], reverse=True)[:10])
+
+    # Collect the results
+    top_words_by_language = word_count_by_language.collect()
+
+
+    # Show results in Console
+    print("----------- REQUIREMENT 3.4 -----------")
+    spark = getSparkSession()
+    top_words_by_language_list = []
+
+    for language, top_words in top_words_by_language:
+        top_words_by_language_list.append(
+            {
+            'language': language,
+            'top_ten_words': top_words
+            }
+        )
+    df = spark.createDataFrame(top_words_by_language_list)
+    df.show()
+
+    print(top_words_by_language_list)
+    return top_words_by_language_list
+
 def generate_data():
 
     data = {
         'req1': getTotalRepoCountByLanguage(),
         'req2': getBatchedRepoLanguageCountsLast60Seconds(),
-        'req3': getAvgStargazersByLanguage()
+        'req3': getAvgStargazersByLanguage(),
+        'req4': getTopTenFrequentWordsByLanguage()
     }
 
     send_to_client(data)
