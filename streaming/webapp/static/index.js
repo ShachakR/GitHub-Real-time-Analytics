@@ -64,7 +64,7 @@ function loadData() {
             clearInterval(countdownTimer);
             timeLeft = UPDATE_INTERVAL;
             loadData();
-            setTimeout(startCountdown, 1000);
+            setTimeout(startUpdateCycle, 1000);
         }
     }, 1000);
 }
