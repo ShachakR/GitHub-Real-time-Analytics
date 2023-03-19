@@ -29,12 +29,27 @@ function loadData() {
             // Loop through the JSON list for requirement 1
             for (var i = 0; i < req1.length; i++) {
                 let data = req1[i];
-                let id = "language" + (i + 1)
+                let id = "req1-language" + (i + 1)
                 document.getElementById(id).innerHTML = `${data['language']}: ${data['count']}`
             }
 
             fetchUpdatedImage(responseData['req2'] + "?t=" + new Date().getTime(), "req2-plot");
             fetchUpdatedImage(responseData['req3'] + "?t=" + new Date().getTime(), "req3-plot");
+
+            let req4 = responseData['req4'];
+            // Loop through the JSON list for requirement 1
+            for (var i = 0; i < req4.length; i++) {
+                let data = req4[i];
+                let id = "req4-language" + (i + 1)
+                let result = `${data['language']}: <br>`
+      
+                for( var j = 0; j < data['top_ten_words'].length; j++){
+                    let word_count = data['top_ten_words'][j]
+                    result += `${word_count[0]}, ${word_count[1]} <br>`
+                }
+
+                document.getElementById(id).innerHTML = result
+            }
 
         }
     };

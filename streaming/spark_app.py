@@ -3,6 +3,7 @@ import requests
 from collections import Counter
 from datetime import datetime
 import traceback
+import re
 from pyspark import SparkContext
 from pyspark.streaming import StreamingContext
 from pyspark.sql import SparkSession
@@ -157,13 +158,13 @@ def getTopTenFrequentWordsByLanguage():
 
     # Split the description into words and group them by language
     # I use groupByKey to get elements where each element is a pair consisting of a language and an iterable of the words.
-    words_by_language = repos.flatMap(lambda repo: ((repo['language'], word) for word in str(repo['description']).lower().split())) \
+    words_by_language = repos.flatMap(lambda repo: ((repo['language'], word) for word in re.sub('[^a-zA-Z ]', '', str(repo['description'])).lower().split() if repo['description'] is not None) ) \
                              .groupByKey()
     
     # Count the frequency of each word
     # We first transform each language's iterable of the words to a Counter object with those words.
-    # We then sort the resulting dictionary items by their values in descending order and takes the top 10 items.
-    # The result is elements where each element is a pair consisting of a language and the top ten most frequent words.
+    # We then sort the resulting dictionary items by their values(frequency) in descending order and takes the top 10 items.
+    # The result is elements where each element is a pair consisting of a language and the top ten most frequent words with their frequency.
     word_count_by_language = words_by_language.mapValues(lambda words: Counter(words)) \
                                                .mapValues(lambda word_count: sorted(word_count.items(), key=lambda x: x[1], reverse=True)[:10])
 
@@ -186,7 +187,6 @@ def getTopTenFrequentWordsByLanguage():
     df = spark.createDataFrame(top_words_by_language_list)
     df.show()
 
-    print(top_words_by_language_list)
     return top_words_by_language_list
 
 def generate_data():

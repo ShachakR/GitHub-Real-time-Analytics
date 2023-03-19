@@ -76,6 +76,7 @@ def getData():
         'req1': data['req1'],
         'req2': createReq2Plot(data['req2']),
         'req3': createReq3Plot(data['req3']),
+        'req4': data['req4']
     }
 
     return jsonify(result)
