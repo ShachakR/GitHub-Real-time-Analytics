@@ -2,6 +2,7 @@ import json
 import requests
 from collections import Counter
 from datetime import datetime
+import time
 import traceback
 import re
 from pyspark import SparkContext
@@ -10,7 +11,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.functions import avg
 
-BATCH_INTERVAL = 15
+BATCH_INTERVAL = 60
 LANGUAGES = ["JavaScript", "Python", "Java"]
 
 # Where each key is a repo id and value is their json data
@@ -40,12 +41,7 @@ def getSparkSession():
     return globals()['spark_session']
 
 def getUpTime():
-    if('upTime' not in globals()):
-        globals()['upTime'] = 0
-
-    uptime = globals()['upTime']
-    globals()['upTime'] = uptime + BATCH_INTERVAL
-    return uptime
+    return int(time.time() - globals()['startTime'])
 
 
 def send_to_client(data):
@@ -189,6 +185,26 @@ def getTopTenFrequentWordsByLanguage():
 
     return top_words_by_language_list
 
+def generate_data_txt(data):
+    print("----------- DATA ANALYSIS (for data.txt) -----------")
+    # only generate when application has been up for two hours
+    # if getUpTime() < 3600:
+    #     return 
+     
+    start_time = globals()['startTime']
+    current_time = int(time.time())
+    
+    print("{}:{}".format(start_time, current_time))
+
+    for i in range(0, 3):
+        language = data['req1'][i]['language']
+        repoCount = data['req1'][i]['count']
+        avgStars = data['req3'][i]['avg_stargazers_count']
+        print("{}:{}:{}".format(language, repoCount, avgStars))
+    
+    for d in data['req4']:
+        print("{}:{}".format(d['language'], ', '.join(d['top_ten_words'])))
+
 def generate_data():
 
     data = {
@@ -199,9 +215,9 @@ def generate_data():
     }
 
     send_to_client(data)
+    generate_data_txt(data)
 
 def process_rdd(time, rdd):
-    pass
     print("----------- %s -----------" % str(time))
     print("Up time: %s seconds" % str(getUpTime()))
     try:
@@ -241,6 +257,8 @@ if __name__ == "__main__":
     globals()['spark_session'] = sparkSession
 
     print("Started Running....")
+    globals()['startTime'] = int(time.time())
+
     sc.setLogLevel("ERROR")
     ssc = StreamingContext(sc, BATCH_INTERVAL)
     ssc.checkpoint("checkpoint_EECS4415_Porject_3")
