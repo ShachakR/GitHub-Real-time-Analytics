@@ -203,7 +203,9 @@ def generate_data_txt(data):
         print("{}:{}:{}".format(language, repoCount, avgStars))
     
     for d in data['req4']:
-        print("{}:{}".format(d['language'], ', '.join(d['top_ten_words'])))
+        language = d['language']
+        top_ten_words =  ','.join(['({},{})'.format(item[0], item[1]) for item in d['top_ten_words']])
+        print("{}:{}".format(language, top_ten_words))
 
 def generate_data():
 
