@@ -44,7 +44,7 @@ def getUpTime():
     return int(time.time() - globals()['startTime'])
 
 
-def send_to_client(data):
+def sendToClient(data):
     url = 'http://webapp:5000/updateData'
     requests.post(url, json=data)
 
@@ -185,11 +185,8 @@ def getTopTenFrequentWordsByLanguage():
 
     return top_words_by_language_list
 
-def generate_data_txt(data):
+def generateDataTxt(data):
     print("----------- DATA ANALYSIS (for data.txt) -----------")
-    # only generate when application has been up for two hours
-    # if getUpTime() < 3600:
-    #     return 
      
     start_time = globals()['startTime']
     current_time = int(time.time())
@@ -207,7 +204,7 @@ def generate_data_txt(data):
         top_ten_words =  ','.join(['({},{})'.format(item[0], item[1]) for item in d['top_ten_words']])
         print("{}:{}".format(language, top_ten_words))
 
-def generate_data():
+def generateData():
 
     data = {
         'req1': getTotalRepoCountByLanguage(),
@@ -216,10 +213,10 @@ def generate_data():
         'req4': getTopTenFrequentWordsByLanguage()
     }
 
-    send_to_client(data)
-    generate_data_txt(data)
+    sendToClient(data)
+    generateDataTxt(data)
 
-def process_rdd(time, rdd):
+def processRdd(time, rdd):
     print("----------- %s -----------" % str(time))
     print("Up time: %s seconds" % str(getUpTime()))
     try:
@@ -240,7 +237,7 @@ def process_rdd(time, rdd):
         updateAllRepositories(repositories)
         updateBatchRepositories(batch_repositories)
 
-        generate_data()
+        generateData()
 
     except Exception as e:
         print("An error occurred:", e)
@@ -267,7 +264,7 @@ if __name__ == "__main__":
 
     data = ssc.socketTextStream(DATA_SOURCE_IP, DATA_SOURCE_PORT)
     repos = data.flatMap(lambda json_str: [json.loads(json_str)])
-    repos.foreachRDD(process_rdd)
+    repos.foreachRDD(processRdd)
     ssc.start()
     ssc.awaitTermination()
 
