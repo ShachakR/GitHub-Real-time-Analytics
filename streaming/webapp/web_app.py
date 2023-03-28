@@ -27,9 +27,8 @@ def createReq2Plot(data):
     for language, counts in counts_by_language.items():
         plt.plot(batch_times, counts, label=language, marker='o')
 
-    plt.xlabel('Batch Time')
-    plt.ylabel('Count')
-    plt.title('Counts by language for each batch interval')
+    plt.xlabel('Time')
+    plt.ylabel('#Repositories')
     plt.legend()
     plt.savefig('/streaming/webapp/static/chart_req2.png')
 
@@ -47,9 +46,8 @@ def createReq3Plot(data):
     plt.bar(languages, avg_stars)
 
     # Add labels and title
-    plt.xlabel('Languages')
+    plt.xlabel('Programming Language')
     plt.ylabel('Average number of stars')
-    plt.title('Average number of stars by language')
     plt.savefig('/streaming/webapp/static/bar_req3.png')
 
     return '/static/bar_req3.png' 

@@ -41,7 +41,7 @@ function loadData() {
             for (var i = 0; i < req4.length; i++) {
                 let data = req4[i];
                 let id = "req4-language" + (i + 1)
-                let result = `${data['language']}: <br>`
+                let result = `<h4>${data['language']}</h4>`
       
                 for( var j = 0; j < data['top_ten_words'].length; j++){
                     let word_count = data['top_ten_words'][j]

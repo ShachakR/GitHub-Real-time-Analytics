@@ -7,23 +7,26 @@
     <title>EECS_Project_3</title>
     <script src="{{url_for('static', filename='index.js')}}"></script>
 </head>
-<body>
-    A simple dashboard <br>
-    <div id="countdown">Updating Data in: 60 seconds</div><br>
-    Total number of collected repositories <br>
-    <ul>
+<body style="text-align: center;">
+    <h1>EECS4415 Project 3 by Shachak Rozenblat 216141459</h1><br>
+    <h2 id="countdown">Updating Data in: 60 seconds</h2><br>
+
+    <h1>Total number of collected repositories</h1>
+    <ul style="font-size: x-large; list-style-type: none">
         <li id="req1-language1">Language1: 0</li>
         <li id="req1-language2">Language2: 0</li>
         <li id="req1-language3">Language3: 0</li>
       </ul><br>
 
     
+    <h1>Number of collected repositories with changes pushed during the last 60 seconds</h1>
     <img id="req2-plot" src="" alt="Chart" height="auto" width="50%"><br>
 
+    <h1>Average number of stars by language</h1>
     <img id="req3-plot" src="" alt="Chart" height="auto" width="50%"><br>
 
-    Total 10 most frequesnt words <br>
-    <ul>
+    <h1>Total 10 most frequesnt words</h1>
+    <ul style="font-size: x-large; list-style-type: none">
         <li id="req4-language1"></li>
         <li id="req4-language2"></li>
         <li id="req4-language3"></li>
