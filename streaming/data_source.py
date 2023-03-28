@@ -6,11 +6,11 @@ import requests
 import socket
 import os
 
-LANGAUGES = ['Python', 'Java', 'JavaScript']
+LANGUAGES = ['Python', 'Java', 'JavaScript']
 
 HOST = "0.0.0.0"   
 PORT = 9999
-TOKEN = "Bearer" + os.getenv('TOKEN')
+TOKEN = "token" + os.getenv('TOKEN')
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
     s.listen(1)
@@ -19,7 +19,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     with conn:
         print("Connected... Starting sending data.")
         while True:
-            for langauge in LANGAUGES:
+            for langauge in LANGUAGES:
                 url = 'https://api.github.com/search/repositories?q=language:{}&sort=updated&order=desc&per_page=50'.format(langauge)
                 try:
                     response = requests.get(url, headers={"Authorization": TOKEN})
@@ -27,6 +27,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         data = response.json()
                         repositories = data["items"]
                         for repository in repositories:
+                            if repository["language"] is None or repository["language"] == "":
+                                continue
                             data = {
                                 'id': repository["id"],
                                 'name': repository["name"],

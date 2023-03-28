@@ -12,7 +12,7 @@ from pyspark.sql.functions import *
 from pyspark.sql.functions import avg
 
 BATCH_INTERVAL = 60
-LANGAUGES = ['Python', 'Java', 'JavaScript']
+LANGUAGES = ['Python', 'Java', 'JavaScript']
 
 # Dictionary to store all repositories sent by the Data Source service so far
 # Each key is a repo id and value is their json data
@@ -111,7 +111,7 @@ def getBatchedRepoLanguageCountsLast60Seconds():
     # Iterate over the required languages list and add missing languages to the dictionary current_batch_language_counts.
     # I need to do this because I cannot gurantee that all three langauges will be represented in current_batch_language_counts
     # because I am further filtering them based on 'pushed_at' attribute.
-    for language in LANGAUGES:
+    for language in LANGUAGES:
         if language not in current_batch_language_counts:
             current_batch_language_counts[language] = 0
 
