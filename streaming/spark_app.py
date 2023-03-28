@@ -12,7 +12,7 @@ from pyspark.sql.functions import *
 from pyspark.sql.functions import avg
 
 BATCH_INTERVAL = 60
-LANGUAGES = ["JavaScript", "Python", "Java"]
+LANGAUGES = ['Python', 'Java', 'JavaScript']
 
 # Where each key is a repo id and value is their json data
 def getAllRepositories() -> dict:
@@ -102,7 +102,9 @@ def getBatchedRepoLanguageCountsLast60Seconds():
 
         # Fill in missing data if needed
         # Iterate over the required languages list and add missing languages to the dictionary
-        for language in LANGUAGES:
+        # I need to do this because I cannot gurantee that all three langauges will be represented here
+        # because I am further filtering them based on 'pushed_at' attribute
+        for language in LANGAUGES:
             if language not in current_batch_language_counts:
                 current_batch_language_counts[language] = 0
 
@@ -240,9 +242,9 @@ def processRdd(time, rdd):
         generateData()
 
     except Exception as e:
-        print("An error occurred:", e)
-        tb_str = traceback.format_tb(e.__traceback__)
-        print(f"Error traceback:\n{tb_str}")
+        # print("An error occurred:", e)
+        # tb_str = traceback.format_tb(e.__traceback__)
+        # print(f"Error traceback:\n{tb_str}")
         print('Waiting for Data...')
 
 if __name__ == "__main__":

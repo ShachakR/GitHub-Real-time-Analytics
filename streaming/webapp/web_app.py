@@ -25,7 +25,7 @@ def createReq2Plot(data):
         counts_by_language[language].append(count)
     
     for language, counts in counts_by_language.items():
-        plt.plot(batch_times, counts, label=language)
+        plt.plot(batch_times, counts, label=language, marker='o')
 
     plt.xlabel('Batch Time')
     plt.ylabel('Count')
