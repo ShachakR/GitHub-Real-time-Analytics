@@ -14,7 +14,8 @@ from pyspark.sql.functions import avg
 BATCH_INTERVAL = 60
 LANGAUGES = ['Python', 'Java', 'JavaScript']
 
-# Where each key is a repo id and value is their json data
+# Dictionary to store all repositories sent by the Data Source service so far
+# Each key is a repo id and value is their json data
 def getAllRepositories() -> dict:
     if('repositories' not in globals()):
         globals()['repositories'] = {}
@@ -30,10 +31,8 @@ def getBatchRepositories() -> list:
 
 def updateBatchRepositories(repositories):
     time = datetime.utcnow()
-    batch_time = time.strftime('%H:%M:%S')
-
     getBatchRepositories().append({
-        'time': batch_time,
+        'time': time,
         'repos': repositories
     })
 
@@ -73,56 +72,64 @@ def getTotalRepoCountByLanguage():
     return counts_list
 
 def getBatchedRepoLanguageCountsLast60Seconds():
-    # get repos that were pushed during the last 60 secodns
+    # Get repos that were pushed during the last 60 secodns
     sc = globals()['SparkContext']
-    batched_repositories = getBatchRepositories()
 
-    batches_data = []
-    for batch in batched_repositories:
-        current_batch_repos = {}
+    # Get latest /current batch to process
+    current_batch = getBatchRepositories()[-1]
+    batch_time = current_batch['time']
 
-        # Get the repos that were pushed in the last 60 seconds
-        for repo in batch['repos'].values():
+    # Using a global so I don't have to re-calculate batches
+    if 'BatchedRepoLanguageCounts' not in  globals():
+        globals()['BatchedRepoLanguageCounts'] = []       
+    batched_repos_language_counts = globals()['BatchedRepoLanguageCounts']
 
-            # Calculate the time passed since repo was pushed, store it in delta
-            pushed_at = datetime.strptime(repo['pushed_at'], '%Y-%m-%dT%H:%M:%SZ')
-            time = datetime.utcnow()
-            delta = time - pushed_at
+    current_batch_repos_last_60 = {}
+    # Get the repos that were pushed in the last 60 seconds
+    for repo in current_batch['repos'].values():
 
-            # Check if the time difference is less than 60 seconds
-            if delta.total_seconds() <= 60:
-                if(repo['id'] not in current_batch_repos):
-                    current_batch_repos[repo['id']] = repo
-            
-        repos = sc.parallelize(current_batch_repos.values())
-        counts  = repos.map(lambda repo: (repo['language'], 1)).reduceByKey(lambda a, b: a+b)
-        counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]}).collect()
+        # Calculate the time passed since repo was pushed, store it in delta
+        pushed_at = datetime.strptime(repo['pushed_at'], '%Y-%m-%dT%H:%M:%SZ')
+        delta = batch_time - pushed_at
 
-        current_batch_language_counts = {count["language"]: count["count"] for count in counts_list}
+        # Check if the time difference is less than 60 seconds
+        if delta.total_seconds() <= 60:
+            if(repo['id'] not in current_batch_repos_last_60):
+                current_batch_repos_last_60[repo['id']] = repo
+    
+    # Convert current_batch_repos_last_60 to an RDD
+    repos = sc.parallelize(current_batch_repos_last_60.values())
 
-        # Fill in missing data if needed
-        # Iterate over the required languages list and add missing languages to the dictionary
-        # I need to do this because I cannot gurantee that all three langauges will be represented here
-        # because I am further filtering them based on 'pushed_at' attribute
-        for language in LANGAUGES:
-            if language not in current_batch_language_counts:
-                current_batch_language_counts[language] = 0
+    # Perform a map reduce to count the occurances of each langauge and collect it as a list
+    counts  = repos.map(lambda repo: (repo['language'], 1)).reduceByKey(lambda a, b: a+b)
+    counts_list = counts.map(lambda x: {"language": x[0], "count": x[1]}).collect()
 
-        # Convert the dictionary back to a list of JSON objects and add them to batches_data list
-        for language in current_batch_language_counts:
-            batches_data.append({'batch_time': batch['time'], "language": language, "count": current_batch_language_counts[language]})
+    # Conver the RDD to a dictionary so I can easily check if a langauge is missing by making it the key 
+    current_batch_language_counts = {count["language"]: count["count"] for count in counts_list}
+
+    # Fill in missing data if needed
+    # Iterate over the required languages list and add missing languages to the dictionary current_batch_language_counts.
+    # I need to do this because I cannot gurantee that all three langauges will be represented in current_batch_language_counts
+    # because I am further filtering them based on 'pushed_at' attribute.
+    for language in LANGAUGES:
+        if language not in current_batch_language_counts:
+            current_batch_language_counts[language] = 0
+
+    # Convert the dictionary back to a list of JSON objects and add them to batched_repos_language_counts list
+    for language in current_batch_language_counts:
+        batched_repos_language_counts.append({'batch_time': batch_time.strftime('%H:%M:%S'), "language": language, "count": current_batch_language_counts[language]})
 
     # get the SparkSession object
     spark = getSparkSession()
     
     # Create a Spark DataFrame from the list of dictionaries
-    df = spark.createDataFrame(batches_data)
+    df = spark.createDataFrame(batched_repos_language_counts)
 
     # Show the df DataFrame in the console
     print("----------- REQUIREMENT 3.2 -----------")
     df.show()
 
-    return batches_data
+    return batched_repos_language_counts
 
 def getAvgStargazersByLanguage():
     repositories = getAllRepositories()
