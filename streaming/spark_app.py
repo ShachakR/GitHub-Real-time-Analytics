@@ -24,6 +24,7 @@ def getAllRepositories() -> dict:
 def updateAllRepositories(repositories):
     globals()['repositories'] = repositories
 
+# A list of repository dictionaries, each dictionary stores the repositories for a batch 
 def getBatchRepositories() -> list:
     if('batch_repositories' not in globals()):
         globals()['batch_repositories'] = []
@@ -216,10 +217,10 @@ def generateDataTxt(data):
 def generateData():
 
     data = {
-        'req1': getTotalRepoCountByLanguage(),
-        'req2': getBatchedRepoLanguageCountsLast60Seconds(),
-        'req3': getAvgStargazersByLanguage(),
-        'req4': getTopTenFrequentWordsByLanguage()
+        'req1': getTotalRepoCountByLanguage(), # requriement 3.1
+        'req2': getBatchedRepoLanguageCountsLast60Seconds(), # requriement 3.2
+        'req3': getAvgStargazersByLanguage(), # requriement 3.3
+        'req4': getTopTenFrequentWordsByLanguage() # requriement 3.4
     }
 
     sendToClient(data)

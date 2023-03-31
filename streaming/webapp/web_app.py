@@ -5,10 +5,19 @@ import json
 
 app = Flask(__name__)
 
+# Creates the plot for requriement 3.2 
 def createReq2Plot(data):
     plt.cla()
     
+    # A list stores all the batch times 
     batch_times = []
+
+    # a dictionary of each langauge counts
+    # Each element in the dictionary has the following format
+    # {
+    #   'language': x, --> The programming language
+    #   'count': [],   --> List of the count for this programming langauge for each batch, i.e count[i] is the count for this langauge for the ith batch 
+    # }
     counts_by_language = {}
 
     for repo in data:
@@ -34,6 +43,7 @@ def createReq2Plot(data):
 
     return '/static/chart_req2.png'
 
+# creates the var graph for requriement 3.3 
 def createReq3Plot(data):
     plt.cla()
     languages = []
@@ -52,6 +62,7 @@ def createReq3Plot(data):
 
     return '/static/bar_req3.png' 
 
+# This endpoint is for Spark to be able to update the data
 @app.route('/updateData', methods=['POST'])
 def updateData():
     data = request.get_json()
@@ -59,6 +70,7 @@ def updateData():
     r.set('data', json.dumps(data))
     return jsonify({'msg': 'success'})
 
+# This endpoint is for the webapp client to fetch the data
 @app.route('/getData', methods=['GET'])
 def getData():
     r = Redis(host='redis', port=6379)
@@ -79,6 +91,7 @@ def getData():
 
     return jsonify(result)
 
+# This endpoint is initally render the web page 
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
