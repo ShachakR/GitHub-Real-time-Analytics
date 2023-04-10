@@ -27,7 +27,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         data = response.json()
                         repositories = data["items"]
                         for repository in repositories:
-                            if repository["language"] is None or repository["language"] == "":
+                            if repository["language"] is None or repository["language"] not in LANGUAGES:
                                 continue
                             data = {
                                 'id': repository["id"],
